@@ -190,7 +190,7 @@ struct ItemViewModel {
         } else if let card = item as? Card {
             self.init(card: card, selection: selection)
         } else if let transfer = item as? Transfer {
-            self.init(transfer, longDateStyle: longDateStyle, selection: selection)
+            self.init(transfer: transfer, longDateStyle: longDateStyle, selection: selection)
         } else {
             fatalError("unknown item: \(item)")
         }
