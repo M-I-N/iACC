@@ -56,45 +56,48 @@ class MainTabBarController: UITabBarController {
 	
 	private func makeFriendsList() -> ListViewController {
 		let vc = ListViewController()
-        vc.shouldRetry = true
-        vc.maxRetryCount = 2
         vc.title = "Friends"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: vc, action: #selector(addFriend))
         
-        let cache: FriendsCache = (User.shared?.isPremium == true) ? friendsCache : NoFriendsCache()
+        let isPremium = (User.shared?.isPremium == true)
+        let api = FriendsAPIItemServiceAdapter(api: FriendsAPI.shared,
+                                               cache: isPremium ? friendsCache : NoFriendsCache(),
+                                               select: vc.select(friend:))
+            .retry(2)
         
-        vc.service = FriendsAPIItemServiceAdapter(api: FriendsAPI.shared,
-                                                  cache: cache,
-                                                  select: vc.select(friend:))
-        vc.cache = FriendsCacheItemServiceAdapter(cache: cache, select: vc.select(friend:))
+        let cache = FriendsCacheItemServiceAdapter(cache: friendsCache, select: vc.select(friend:))
+        let service = isPremium ? api.fallback(cache) : api
+        
+        vc.service = service
 		return vc
 	}
 	
 	private func makeSentTransfersList() -> ListViewController {
 		let vc = ListViewController()
-        vc.shouldRetry = true
-        vc.maxRetryCount = 1
         vc.navigationItem.title = "Sent"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Send", style: .done, target: vc, action: #selector(sendMoney))
         
-        vc.service = SentTransfersAPIItemServiceAdapter(api: TransfersAPI.shared, select: vc.select(transfer:))
+        let service = SentTransfersAPIItemServiceAdapter(api: TransfersAPI.shared, select: vc.select(transfer:))
+            .retry(1)
+        
+        vc.service = service
 		return vc
 	}
 	
 	private func makeReceivedTransfersList() -> ListViewController {
 		let vc = ListViewController()
-        vc.shouldRetry = true
-        vc.maxRetryCount = 1
         vc.navigationItem.title = "Received"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Request", style: .done, target: vc, action: #selector(requestMoney))
         
-        vc.service = ReceivedTransfersAPIItemServiceAdapter(api: TransfersAPI.shared, select: vc.select(transfer:))
+        let service = ReceivedTransfersAPIItemServiceAdapter(api: TransfersAPI.shared, select: vc.select(transfer:))
+            .retry(1)
+        
+        vc.service = service
 		return vc
 	}
 	
 	private func makeCardsList() -> ListViewController {
 		let vc = ListViewController()
-        vc.shouldRetry = false
         vc.title = "Cards"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: vc, action: #selector(addCard))
         
@@ -102,4 +105,38 @@ class MainTabBarController: UITabBarController {
 		return vc
 	}
 	
+}
+
+// example of a composite pattern where you can have one representation of two separate implementations of an ItemsService,
+/**
+ It will first try to load from the primary service and if its not successful, try to load from a fallback service
+ */
+struct ItemsServiceWithFallback: ItemsService {
+    let primary: ItemsService
+    let fallback: ItemsService
+    
+    func loadItems(completion: @escaping (Result<[ItemViewModel], Error>) -> Void) {
+        primary.loadItems { result in
+            switch result {
+            case .success:
+                completion(result)
+            case .failure:
+                fallback.loadItems(completion: completion)
+            }
+        }
+    }
+}
+
+extension ItemsService {
+    func fallback(_ fallback: ItemsService) -> ItemsService {
+        ItemsServiceWithFallback(primary: self, fallback: fallback)
+    }
+    
+    func retry(_ count: UInt) -> ItemsService {
+        var service: ItemsService = self
+        for _ in 0..<count {
+            service = service.fallback(self)
+        }
+        return service
+    }
 }

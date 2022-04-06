@@ -9,14 +9,8 @@ protocol ItemsService {
 }
 
 class ListViewController: UITableViewController {
-	var items = [ItemViewModel]()
-	
     var service: ItemsService?
-    var cache: ItemsService?
-    
-	var retryCount = 0
-	var maxRetryCount = 0
-	var shouldRetry = false
+	private var items = [ItemViewModel]()
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -40,37 +34,13 @@ class ListViewController: UITableViewController {
 	private func handleAPIResult(_ result: Result<[ItemViewModel], Error>) {
 		switch result {
 		case let .success(items):
-			self.retryCount = 0
             self.items = items
+            self.tableView.reloadData()
 			self.refreshControl?.endRefreshing()
-			self.tableView.reloadData()
 			
 		case let .failure(error):
-			if shouldRetry && retryCount < maxRetryCount {
-				retryCount += 1
-				
-				refresh()
-				return
-			}
-			
-			retryCount = 0
-			
-			if User.shared?.isPremium == true {
-                cache?.loadItems() { [weak self] result in
-                    switch result {
-                    case let .success(items):
-                        self?.items = items
-                        self?.tableView.reloadData()
-                        
-                    case let .failure(error):
-                        self?.show(error: error)
-                    }
-                    self?.refreshControl?.endRefreshing()
-                }
-			} else {
-                self.show(error: error)
-				self.refreshControl?.endRefreshing()
-			}
+            self.show(error: error)
+            self.refreshControl?.endRefreshing()
 		}
 	}
 	
