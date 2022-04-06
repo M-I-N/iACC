@@ -56,7 +56,6 @@ class MainTabBarController: UITabBarController {
 	
 	private func makeFriendsList() -> ListViewController {
 		let vc = ListViewController()
-		vc.fromFriendsScreen = true
         vc.shouldRetry = true
         vc.maxRetryCount = 2
         vc.title = "Friends"
@@ -73,10 +72,8 @@ class MainTabBarController: UITabBarController {
 	
 	private func makeSentTransfersList() -> ListViewController {
 		let vc = ListViewController()
-		vc.fromSentTransfersScreen = true
         vc.shouldRetry = true
         vc.maxRetryCount = 1
-        vc.longDateStyle = true
         vc.navigationItem.title = "Sent"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Send", style: .done, target: vc, action: #selector(sendMoney))
         
@@ -86,10 +83,8 @@ class MainTabBarController: UITabBarController {
 	
 	private func makeReceivedTransfersList() -> ListViewController {
 		let vc = ListViewController()
-		vc.fromReceivedTransfersScreen = true
         vc.shouldRetry = true
         vc.maxRetryCount = 1
-        vc.longDateStyle = false
         vc.navigationItem.title = "Received"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Request", style: .done, target: vc, action: #selector(requestMoney))
         
@@ -99,7 +94,6 @@ class MainTabBarController: UITabBarController {
 	
 	private func makeCardsList() -> ListViewController {
 		let vc = ListViewController()
-		vc.fromCardsScreen = true
         vc.shouldRetry = false
         vc.title = "Cards"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: vc, action: #selector(addCard))

@@ -18,13 +18,6 @@ class ListViewController: UITableViewController {
 	var maxRetryCount = 0
 	var shouldRetry = false
 	
-	var longDateStyle = false
-	
-	var fromReceivedTransfersScreen = false
-	var fromSentTransfersScreen = false
-	var fromCardsScreen = false
-	var fromFriendsScreen = false
-	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		refreshControl = UIRefreshControl()
@@ -62,7 +55,7 @@ class ListViewController: UITableViewController {
 			
 			retryCount = 0
 			
-			if fromFriendsScreen && User.shared?.isPremium == true {
+			if User.shared?.isPremium == true {
                 cache?.loadItems() { [weak self] result in
                     switch result {
                     case let .success(items):
@@ -106,18 +99,6 @@ struct ItemViewModel {
     let title: String
     let subtitle: String
     let select: () -> Void
-    
-    init(_ item: Any, longDateStyle: Bool, selection: @escaping () -> Void) {
-        if let friend = item as? Friend {
-            self.init(friend: friend, selection: selection)
-        } else if let card = item as? Card {
-            self.init(card: card, selection: selection)
-        } else if let transfer = item as? Transfer {
-            self.init(transfer: transfer, longDateStyle: longDateStyle, selection: selection)
-        } else {
-            fatalError("unknown item: \(item)")
-        }
-    }
 }
 
 extension ItemViewModel {
