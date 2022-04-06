@@ -77,10 +77,7 @@ class MainTabBarController: UITabBarController {
         vc.navigationItem.title = "Sent"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Send", style: .done, target: vc, action: #selector(sendMoney))
         
-        vc.service = TransfersAPIItemServiceAdapter(api: TransfersAPI.shared,
-                                                    select: vc.select(transfer:),
-                                                    fromSentTransfersScreen: true,
-                                                    longDateStyle: true)
+        vc.service = SentTransfersAPIItemServiceAdapter(api: TransfersAPI.shared, select: vc.select(transfer:))
 		return vc
 	}
 	
@@ -93,10 +90,7 @@ class MainTabBarController: UITabBarController {
         vc.navigationItem.title = "Received"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Request", style: .done, target: vc, action: #selector(requestMoney))
         
-        vc.service = TransfersAPIItemServiceAdapter(api: TransfersAPI.shared,
-                                                    select: vc.select(transfer:),
-                                                    fromSentTransfersScreen: false,
-                                                    longDateStyle: false)
+        vc.service = ReceivedTransfersAPIItemServiceAdapter(api: TransfersAPI.shared, select: vc.select(transfer:))
 		return vc
 	}
 	
