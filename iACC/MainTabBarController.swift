@@ -54,24 +54,36 @@ class MainTabBarController: UITabBarController {
 	private func makeFriendsList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromFriendsScreen = true
+        vc.service = FriendsAPIItemServiceAdapter(api: FriendsAPI.shared,
+                                                  cache: (UIApplication.shared.connectedScenes.first?.delegate as! SceneDelegate).cache,
+                                                  select: vc.select(friend:))
 		return vc
 	}
 	
 	private func makeSentTransfersList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromSentTransfersScreen = true
+        vc.service = TransfersAPIItemServiceAdapter(api: TransfersAPI.shared,
+                                                    select: vc.select(transfer:),
+                                                    fromSentTransfersScreen: true,
+                                                    longDateStyle: true)
 		return vc
 	}
 	
 	private func makeReceivedTransfersList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromReceivedTransfersScreen = true
+        vc.service = TransfersAPIItemServiceAdapter(api: TransfersAPI.shared,
+                                                    select: vc.select(transfer:),
+                                                    fromSentTransfersScreen: false,
+                                                    longDateStyle: false)
 		return vc
 	}
 	
 	private func makeCardsList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromCardsScreen = true
+        vc.service = CardAPIItemServiceAdapter(api: CardAPI.shared, select: vc.select(card:))
 		return vc
 	}
 	

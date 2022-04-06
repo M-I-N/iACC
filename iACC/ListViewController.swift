@@ -4,32 +4,80 @@
 
 import UIKit
 
-protocol APIService {
-    func loadFriends(completion: @escaping (Result<[Friend], Error>) -> Void)
-    func loadCards(completion: @escaping (Result<[Card], Error>) -> Void)
-    func loadTransfers(completion: @escaping (Result<[Transfer], Error>) -> Void)
+protocol ItemsService {
+    func loadItems(completion: @escaping (Result<[ItemViewModel], Error>) -> Void)
 }
 
-// FIXME: Violets the Interface segregation principle because each of the APIs are forced to depend on requirements they don't use
-extension FriendsAPI: APIService {
-    func loadCards(completion: @escaping (Result<[Card], Error>) -> Void) { }
-    func loadTransfers(completion: @escaping (Result<[Transfer], Error>) -> Void) { }
+struct FriendsAPIItemServiceAdapter: ItemsService {
+    let api: FriendsAPI
+    let cache: FriendsCache
+    let select: (Friend) -> Void
+    
+    func loadItems(completion: @escaping (Result<[ItemViewModel], Error>) -> Void) {
+        api.loadFriends { result in
+            DispatchQueue.mainAsyncIfNeeded {
+                completion(result.map { items in
+                    if User.shared?.isPremium == true {
+                        cache.save(items)
+                    }
+                    return items.map { item in
+                        ItemViewModel(friend: item) {
+                            self.select(item)
+                        }
+                    }
+                })
+            }
+        }
+    }
 }
 
-extension CardAPI: APIService {
-    func loadFriends(completion: @escaping (Result<[Friend], Error>) -> Void) { }
-    func loadTransfers(completion: @escaping (Result<[Transfer], Error>) -> Void) { }
+struct CardAPIItemServiceAdapter: ItemsService {
+    let api: CardAPI
+    let select: (Card) -> Void
+    
+    func loadItems(completion: @escaping (Result<[ItemViewModel], Error>) -> Void) {
+        api.loadCards { result in
+            DispatchQueue.mainAsyncIfNeeded {
+                completion(result.map { items in
+                    items.map { item in
+                        ItemViewModel(card: item) {
+                            self.select(item)
+                        }
+                    }
+                })
+            }
+        }
+    }
 }
 
-extension TransfersAPI: APIService {
-    func loadFriends(completion: @escaping (Result<[Friend], Error>) -> Void) { }
-    func loadCards(completion: @escaping (Result<[Card], Error>) -> Void) { }
+struct TransfersAPIItemServiceAdapter: ItemsService {
+    let api: TransfersAPI
+    let select: (Transfer) -> Void
+    
+    let fromSentTransfersScreen: Bool
+    let longDateStyle: Bool
+    
+    func loadItems(completion: @escaping (Result<[ItemViewModel], Error>) -> Void) {
+        api.loadTransfers { result in
+            DispatchQueue.mainAsyncIfNeeded {
+                completion(result.map { items in
+                    items.filter({ fromSentTransfersScreen ? $0.isSender : !$0.isSender }).map { item in
+                        ItemViewModel(
+                            transfer: item,
+                            longDateStyle: longDateStyle) {
+                                self.select(item)
+                            }
+                    }
+                })
+            }
+        }
+    }
 }
 
 class ListViewController: UITableViewController {
 	var items = [ItemViewModel]()
 	
-    var api: APIService?
+    var service: ItemsService?
     
 	var retryCount = 0
 	var maxRetryCount = 0
@@ -91,53 +139,7 @@ class ListViewController: UITableViewController {
 	
 	@objc private func refresh() {
 		refreshControl?.beginRefreshing()
-		if fromFriendsScreen {
-            api = FriendsAPI.shared
-			api?.loadFriends { [weak self] result in
-				DispatchQueue.mainAsyncIfNeeded {
-                    self?.handleAPIResult(result.map { items in
-                        if User.shared?.isPremium == true {
-                            (UIApplication.shared.connectedScenes.first?.delegate as! SceneDelegate).cache.save(items)
-                        }
-                        return items.map { item in
-                            ItemViewModel(friend: item) {
-                                self?.select(friend: item)
-                            }
-                        }
-                    })
-				}
-			}
-		} else if fromCardsScreen {
-            api = CardAPI.shared
-			api?.loadCards { [weak self] result in
-				DispatchQueue.mainAsyncIfNeeded {
-					self?.handleAPIResult(result.map { items in
-                        items.map { item in
-                            ItemViewModel(card: item) {
-                                self?.select(card: item)
-                            }
-                        }
-                    })
-				}
-			}
-		} else if fromSentTransfersScreen || fromReceivedTransfersScreen {
-            api = TransfersAPI.shared
-			api?.loadTransfers { [weak self, longDateStyle, fromSentTransfersScreen] result in
-				DispatchQueue.mainAsyncIfNeeded {
-					self?.handleAPIResult(result.map { items in
-                        items.filter({ fromSentTransfersScreen ? $0.isSender : !$0.isSender }).map { item in
-                            ItemViewModel(
-                                transfer: item,
-                                longDateStyle: longDateStyle) {
-                                    self?.select(transfer: item)
-                                }
-                        }
-                    })
-				}
-			}
-		} else {
-			fatalError("unknown context")
-		}
+        service?.loadItems(completion: handleAPIResult(_:))
 	}
 	
 	private func handleAPIResult(_ result: Result<[ItemViewModel], Error>) {
