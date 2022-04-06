@@ -4,13 +4,32 @@
 
 import UIKit
 
+protocol APIService {
+    func loadFriends(completion: @escaping (Result<[Friend], Error>) -> Void)
+    func loadCards(completion: @escaping (Result<[Card], Error>) -> Void)
+    func loadTransfers(completion: @escaping (Result<[Transfer], Error>) -> Void)
+}
+
+// FIXME: Violets the Interface segregation principle because each of the APIs are forced to depend on requirements they don't use
+extension FriendsAPI: APIService {
+    func loadCards(completion: @escaping (Result<[Card], Error>) -> Void) { }
+    func loadTransfers(completion: @escaping (Result<[Transfer], Error>) -> Void) { }
+}
+
+extension CardAPI: APIService {
+    func loadFriends(completion: @escaping (Result<[Friend], Error>) -> Void) { }
+    func loadTransfers(completion: @escaping (Result<[Transfer], Error>) -> Void) { }
+}
+
+extension TransfersAPI: APIService {
+    func loadFriends(completion: @escaping (Result<[Friend], Error>) -> Void) { }
+    func loadCards(completion: @escaping (Result<[Card], Error>) -> Void) { }
+}
+
 class ListViewController: UITableViewController {
 	var items = [ItemViewModel]()
 	
-    // FIXME: Can we reduce these into a single object?
-    let friendsAPI = FriendsAPI.shared
-    let cardAPI = CardAPI.shared
-    let transfersAPI = TransfersAPI.shared
+    var api: APIService?
     
 	var retryCount = 0
 	var maxRetryCount = 0
@@ -73,7 +92,8 @@ class ListViewController: UITableViewController {
 	@objc private func refresh() {
 		refreshControl?.beginRefreshing()
 		if fromFriendsScreen {
-			friendsAPI.loadFriends { [weak self] result in
+            api = FriendsAPI.shared
+			api?.loadFriends { [weak self] result in
 				DispatchQueue.mainAsyncIfNeeded {
                     self?.handleAPIResult(result.map { items in
                         if User.shared?.isPremium == true {
@@ -88,7 +108,8 @@ class ListViewController: UITableViewController {
 				}
 			}
 		} else if fromCardsScreen {
-			cardAPI.loadCards { [weak self] result in
+            api = CardAPI.shared
+			api?.loadCards { [weak self] result in
 				DispatchQueue.mainAsyncIfNeeded {
 					self?.handleAPIResult(result.map { items in
                         items.map { item in
@@ -100,7 +121,8 @@ class ListViewController: UITableViewController {
 				}
 			}
 		} else if fromSentTransfersScreen || fromReceivedTransfersScreen {
-			transfersAPI.loadTransfers { [weak self, longDateStyle, fromSentTransfersScreen] result in
+            api = TransfersAPI.shared
+			api?.loadTransfers { [weak self, longDateStyle, fromSentTransfersScreen] result in
 				DispatchQueue.mainAsyncIfNeeded {
 					self?.handleAPIResult(result.map { items in
                         items.filter({ fromSentTransfersScreen ? $0.isSender : !$0.isSender }).map { item in
