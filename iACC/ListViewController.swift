@@ -7,6 +7,11 @@ import UIKit
 class ListViewController: UITableViewController {
 	var items = [ItemViewModel]()
 	
+    // FIXME: Can we reduce these into a single object?
+    let friendsAPI = FriendsAPI.shared
+    let cardAPI = CardAPI.shared
+    let transfersAPI = TransfersAPI.shared
+    
 	var retryCount = 0
 	var maxRetryCount = 0
 	var shouldRetry = false
@@ -68,7 +73,7 @@ class ListViewController: UITableViewController {
 	@objc private func refresh() {
 		refreshControl?.beginRefreshing()
 		if fromFriendsScreen {
-			FriendsAPI.shared.loadFriends { [weak self] result in
+			friendsAPI.loadFriends { [weak self] result in
 				DispatchQueue.mainAsyncIfNeeded {
                     self?.handleAPIResult(result.map { items in
                         if User.shared?.isPremium == true {
@@ -83,7 +88,7 @@ class ListViewController: UITableViewController {
 				}
 			}
 		} else if fromCardsScreen {
-			CardAPI.shared.loadCards { [weak self] result in
+			cardAPI.loadCards { [weak self] result in
 				DispatchQueue.mainAsyncIfNeeded {
 					self?.handleAPIResult(result.map { items in
                         items.map { item in
@@ -95,7 +100,7 @@ class ListViewController: UITableViewController {
 				}
 			}
 		} else if fromSentTransfersScreen || fromReceivedTransfersScreen {
-			TransfersAPI.shared.loadTransfers { [weak self, longDateStyle, fromSentTransfersScreen] result in
+			transfersAPI.loadTransfers { [weak self, longDateStyle, fromSentTransfersScreen] result in
 				DispatchQueue.mainAsyncIfNeeded {
 					self?.handleAPIResult(result.map { items in
                         items.filter({ fromSentTransfersScreen ? $0.isSender : !$0.isSender }).map { item in
