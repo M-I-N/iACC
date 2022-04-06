@@ -54,8 +54,12 @@ class MainTabBarController: UITabBarController {
 	private func makeFriendsList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromFriendsScreen = true
+        
+        let cache: FriendsCache = (User.shared?.isPremium == true) ?
+        (UIApplication.shared.connectedScenes.first?.delegate as! SceneDelegate).cache : NoFriendsCache()
+        
         vc.service = FriendsAPIItemServiceAdapter(api: FriendsAPI.shared,
-                                                  cache: (UIApplication.shared.connectedScenes.first?.delegate as! SceneDelegate).cache,
+                                                  cache: cache,
                                                   select: vc.select(friend:))
 		return vc
 	}
