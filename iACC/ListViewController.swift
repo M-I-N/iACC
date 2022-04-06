@@ -90,41 +90,8 @@ class ListViewController: UITableViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		
 		refreshControl = UIRefreshControl()
 		refreshControl?.addTarget(self, action: #selector(refresh), for: .valueChanged)
-		
-		if fromFriendsScreen {
-			shouldRetry = true
-			maxRetryCount = 2
-			
-			title = "Friends"
-			
-			navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addFriend))
-			
-		} else if fromCardsScreen {
-			shouldRetry = false
-			
-			title = "Cards"
-			
-			navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addCard))
-			
-		} else if fromSentTransfersScreen {
-			shouldRetry = true
-			maxRetryCount = 1
-			longDateStyle = true
-
-			navigationItem.title = "Sent"
-			navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Send", style: .done, target: self, action: #selector(sendMoney))
-
-		} else if fromReceivedTransfersScreen {
-			shouldRetry = true
-			maxRetryCount = 1
-			longDateStyle = false
-			
-			navigationItem.title = "Received"
-			navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Request", style: .done, target: self, action: #selector(requestMoney))
-		}
 	}
 	
 	override func viewWillAppear(_ animated: Bool) {

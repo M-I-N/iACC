@@ -54,6 +54,10 @@ class MainTabBarController: UITabBarController {
 	private func makeFriendsList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromFriendsScreen = true
+        vc.shouldRetry = true
+        vc.maxRetryCount = 2
+        vc.title = "Friends"
+        vc.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: vc, action: #selector(addFriend))
         
         let cache: FriendsCache = (User.shared?.isPremium == true) ?
         (UIApplication.shared.connectedScenes.first?.delegate as! SceneDelegate).cache : NoFriendsCache()
@@ -67,6 +71,12 @@ class MainTabBarController: UITabBarController {
 	private func makeSentTransfersList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromSentTransfersScreen = true
+        vc.shouldRetry = true
+        vc.maxRetryCount = 1
+        vc.longDateStyle = true
+        vc.navigationItem.title = "Sent"
+        vc.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Send", style: .done, target: vc, action: #selector(sendMoney))
+        
         vc.service = TransfersAPIItemServiceAdapter(api: TransfersAPI.shared,
                                                     select: vc.select(transfer:),
                                                     fromSentTransfersScreen: true,
@@ -77,6 +87,12 @@ class MainTabBarController: UITabBarController {
 	private func makeReceivedTransfersList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromReceivedTransfersScreen = true
+        vc.shouldRetry = true
+        vc.maxRetryCount = 1
+        vc.longDateStyle = false
+        vc.navigationItem.title = "Received"
+        vc.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Request", style: .done, target: vc, action: #selector(requestMoney))
+        
         vc.service = TransfersAPIItemServiceAdapter(api: TransfersAPI.shared,
                                                     select: vc.select(transfer:),
                                                     fromSentTransfersScreen: false,
@@ -87,6 +103,10 @@ class MainTabBarController: UITabBarController {
 	private func makeCardsList() -> ListViewController {
 		let vc = ListViewController()
 		vc.fromCardsScreen = true
+        vc.shouldRetry = false
+        vc.title = "Cards"
+        vc.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: vc, action: #selector(addCard))
+        
         vc.service = CardAPIItemServiceAdapter(api: CardAPI.shared, select: vc.select(card:))
 		return vc
 	}
