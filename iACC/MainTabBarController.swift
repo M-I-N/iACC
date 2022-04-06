@@ -5,9 +5,12 @@
 import UIKit
 
 class MainTabBarController: UITabBarController {
-	
-	convenience init() {
+    
+    private var friendsCache: FriendsCache!
+	// dependency injection through initializer 
+    convenience init(friendsCache: FriendsCache) {
 		self.init(nibName: nil, bundle: nil)
+        self.friendsCache = friendsCache
 		self.setupViewController()
 	}
 
@@ -59,8 +62,7 @@ class MainTabBarController: UITabBarController {
         vc.title = "Friends"
         vc.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: vc, action: #selector(addFriend))
         
-        let cache: FriendsCache = (User.shared?.isPremium == true) ?
-        (UIApplication.shared.connectedScenes.first?.delegate as! SceneDelegate).cache : NoFriendsCache()
+        let cache: FriendsCache = (User.shared?.isPremium == true) ? friendsCache : NoFriendsCache()
         
         vc.service = FriendsAPIItemServiceAdapter(api: FriendsAPI.shared,
                                                   cache: cache,
