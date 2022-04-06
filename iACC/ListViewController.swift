@@ -90,10 +90,30 @@ struct ReceivedTransfersAPIItemServiceAdapter: ItemsService {
     }
 }
 
+struct FriendsCacheItemServiceAdapter: ItemsService {
+    let cache: FriendsCache
+    let select: (Friend) -> Void
+    
+    func loadItems(completion: @escaping (Result<[ItemViewModel], Error>) -> Void) {
+        cache.loadFriends { result in
+            DispatchQueue.mainAsyncIfNeeded {
+                completion(result.map { items in
+                    items.map { item in
+                        ItemViewModel(friend: item) {
+                            select(item)
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+
 class ListViewController: UITableViewController {
 	var items = [ItemViewModel]()
 	
     var service: ItemsService?
+    var cache: ItemsService?
     
 	var retryCount = 0
 	var maxRetryCount = 0
@@ -144,23 +164,17 @@ class ListViewController: UITableViewController {
 			retryCount = 0
 			
 			if fromFriendsScreen && User.shared?.isPremium == true {
-				(UIApplication.shared.connectedScenes.first?.delegate as! SceneDelegate).cache.loadFriends { [weak self] result in
-					DispatchQueue.mainAsyncIfNeeded {
-						switch result {
-						case let .success(items):
-                            self?.items = items.map { item in
-                                ItemViewModel(friend: item, selection: { [weak self] in
-                                    self?.select(friend: item)
-                                })
-                            }
-							self?.tableView.reloadData()
-							
-						case let .failure(error):
-                            self?.show(error: error)
-						}
-						self?.refreshControl?.endRefreshing()
-					}
-				}
+                cache?.loadItems() { [weak self] result in
+                    switch result {
+                    case let .success(items):
+                        self?.items = items
+                        self?.tableView.reloadData()
+                        
+                    case let .failure(error):
+                        self?.show(error: error)
+                    }
+                    self?.refreshControl?.endRefreshing()
+                }
 			} else {
                 self.show(error: error)
 				self.refreshControl?.endRefreshing()

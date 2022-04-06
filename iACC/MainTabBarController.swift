@@ -65,6 +65,7 @@ class MainTabBarController: UITabBarController {
         vc.service = FriendsAPIItemServiceAdapter(api: FriendsAPI.shared,
                                                   cache: cache,
                                                   select: vc.select(friend:))
+        vc.cache = FriendsCacheItemServiceAdapter(cache: cache, select: vc.select(friend:))
 		return vc
 	}
 	

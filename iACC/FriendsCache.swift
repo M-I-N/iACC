@@ -27,5 +27,10 @@ class FriendsCache {
 }
 
 class NoFriendsCache: FriendsCache {
+    override func loadFriends(completion: @escaping (Result<[Friend], Error>) -> Void) {
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.25) {
+            completion(.success([]))
+        }
+    }
     override func save(_ newFriends: [Friend]) { }
 }
